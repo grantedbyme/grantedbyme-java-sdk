@@ -41,7 +41,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.11-master
+ * GrantedByMe API class v1.0.3-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -71,7 +71,7 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * Initiate key exchange for encrypted communication.
      * @param publicKey
      * @return
      */
@@ -83,9 +83,9 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
-     * @param serviceKey
-     * @param grantor
+     * Active pending service using service key and owner authentication hash.
+     * @param serviceKey The activation service key
+     * @param grantor The owner authentication hash
      * @return
      */
     public JSONObject activateService(String serviceKey, String grantor) {
@@ -96,7 +96,7 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * De-active the service.
      * @return
      */
     public JSONObject deactivateService() {
@@ -105,8 +105,8 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
-     * @return
+     * Retrieve user account registration token.
+     * @return JSONObject
      */
     public JSONObject getAccountToken() {
         HashMap params = getParams();
@@ -115,9 +115,9 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * Retrieve user account registration token state.
      * @param token
-     * @return
+     * @return JSONObject
      */
     public JSONObject getAccountState(String token) {
         HashMap params = getParams();
@@ -126,10 +126,10 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * Link an existing user account with a GBM account.
      * @param token
      * @param grantor
-     * @return
+     * @return JSONObject
      */
     public JSONObject linkAccount(String token, String grantor) {
         HashMap params = getParams();
@@ -139,9 +139,9 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * Unlink an existing user account with a GBM account.
      * @param grantor
-     * @return
+     * @return JSONObject
      */
     public JSONObject unlinkAccount(String grantor) {
         HashMap params = getParams();
@@ -150,8 +150,8 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
-     * @return
+     * Retrieve user account authentication token.
+     * @return JSONObject
      */
     public JSONObject getSessionToken() {
         HashMap params = getParams();
@@ -162,9 +162,9 @@ public class GrantedByMe {
     }
 
     /**
-     * TBD
+     * Retrieve user account authentication token state.
      * @param token
-     * @return
+     * @return JSONObject
      */
     public JSONObject getSessionState(String token) {
         HashMap params = getParams();
@@ -174,7 +174,7 @@ public class GrantedByMe {
 
     /**
      * Returns the default HTTP parameters sent by the client
-     * @return
+     * @return HashMap
      */
     private HashMap getParams() {
         HashMap<String, Object> result = new HashMap<>();

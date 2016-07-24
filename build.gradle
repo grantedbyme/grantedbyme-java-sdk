@@ -1,0 +1,47 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+import org.apache.tools.ant.taskdefs.condition.Os
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+// apply plugin
+apply plugin: 'java'
+apply plugin: 'java-library-distribution'
+apply plugin: 'idea'
+
+version_file = new File('.version')
+if(version_file.exists()) {
+    version = version_file.text
+}
+
+println "${group}.${project.name}-${version}"
+
+dependencies {
+    testCompile 'junit:junit:4.+'
+    compile 'org.bouncycastle:bcprov-jdk16:1.+'
+    compile 'com.googlecode.json-simple:json-simple:1.+'
+}
+
+// Task "distZip" added by plugin "java-library-distribution":
+distZip.shouldRunAfter(build)
+
+jar {
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.MF', '.gitkeep'
+    manifest {
+        attributes 'Main-Class': 'grantedbyme.Main', 'Class-Path': configurations.runtime.files.collect { "lib/$it.name" }.join(' ')
+    }
+}
+
+artifacts {
+    archives jar
+}
+
+uploadArchives {
+    repositories {
+        mavenLocal() 
+    }
+}
+
+defaultTasks 'clean', 'build', 'jar'

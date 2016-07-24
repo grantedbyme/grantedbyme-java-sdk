@@ -1,0 +1,22 @@
+# Copyright (c) 2016 grantedby.me
+# Author: GrantedByMe <info@grantedby.me>
+
+# Build and Release Folders
+bin/
+bin-debug/
+bin-release/
+build/
+
+# Other files and folders
+.settings/
+.gradle/
+temp/
+publish/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+version.properties
