@@ -11,7 +11,7 @@ apply plugin: 'java'
 apply plugin: 'java-library-distribution'
 apply plugin: 'idea'
 
-version_file = new File('.version')
+def version_file = new File('.version')
 if(version_file.exists()) {
     version = version_file.text
 }
