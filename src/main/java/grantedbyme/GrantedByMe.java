@@ -41,7 +41,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.5-master
+ * GrantedByMe API class v1.0.6-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
