@@ -41,7 +41,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.6-master
+ * GrantedByMe API class v1.0.7-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -55,8 +55,8 @@ public class GrantedByMe {
 
     /**
      * Constructor
-     * @param privateKey
-     * @param serverKey
+     * @param privateKey Your private key encoded in PEM format
+     * @param serverKey GrantedByMe server public key encoded in PEM format
      */
     public GrantedByMe(String privateKey, String serverKey) {
         this.isDebug = true;
@@ -71,9 +71,25 @@ public class GrantedByMe {
     }
 
     /**
+     * Debug mode setter
+     * @param isEnabled Indicates whether the debug mode is enabled
+     */
+    public void setDebugMode(Boolean isEnabled) {
+        this.isDebug = isEnabled;
+    }
+
+    /**
+     * API URL setter
+     * @param url The GrantedByMe service API URL
+     */
+    public void setApiUrl(String url) {
+        this.apiURL = url;
+    }
+
+    /**
      * Initiate key exchange for encrypted communication.
-     * @param publicKey
-     * @return
+     * @param publicKey Your public key encoded in PEM format
+     * @return JSONObject
      */
     private JSONObject activateHandshake(String publicKey) {
         HashMap<String, Object> result = new HashMap<>();
@@ -86,10 +102,10 @@ public class GrantedByMe {
      * Active pending service using service key and owner authentication hash.
      * @param serviceKey The activation service key
      * @param grantor The owner authentication hash
-     * @return
+     * @return JSONObject
      */
     public JSONObject activateService(String serviceKey, String grantor) {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("grantor", grantor);
         params.put("service_key", serviceKey);
         return post(params, "activate_service");
@@ -97,10 +113,10 @@ public class GrantedByMe {
 
     /**
      * De-active the service.
-     * @return
+     * @return JSONObject
      */
     public JSONObject deactivateService() {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         return post(params, "deactivate_service");
     }
 
@@ -109,18 +125,18 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getAccountToken() {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("token_type", 1);
         return post(params, "get_session_token");
     }
 
     /**
      * Retrieve user account registration token state.
-     * @param token
+     * @param token The token recieved from getAccountToken
      * @return JSONObject
      */
     public JSONObject getAccountState(String token) {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("token", token);
         return post(params, "get_session_state");
     }
@@ -132,7 +148,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject linkAccount(String token, String grantor) {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("token", token);
         params.put("grantor", grantor);
         return post(params, "link_account");
@@ -144,7 +160,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject unlinkAccount(String grantor) {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("grantor", CryptoUtil.sha512(grantor));
         return post(params, "unlink_account");
     }
@@ -154,7 +170,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getSessionToken() {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("token_type", 2);
         params.put("http_user_agent", "Unknown");
         params.put("remote_addr", "0.0.0.0");
@@ -167,16 +183,38 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getSessionState(String token) {
-        HashMap params = getParams();
+        HashMap<String, Object> params = getParams();
         params.put("token", token);
         return post(params, "get_session_state");
     }
 
     /**
+     * Retrieve user account authentication token.
+     * @return JSONObject
+     */
+    public JSONObject getRegisterToken() {
+        HashMap<String, Object> params = getParams();
+        params.put("token_type", 4);
+        params.put("http_user_agent", "Unknown");
+        params.put("remote_addr", "0.0.0.0");
+        return post(params, "get_session_token");
+    }
+
+    /**
+     * Retrieve user account authentication token state.
+     * @param token
+     * @return JSONObject
+     */
+    public JSONObject getRegisterState(String token) {
+        HashMap<String, Object> params = getParams();
+        params.put("token", token);
+        return post(params, "get_session_state");
+    }
+    /**
      * Returns the default HTTP parameters sent by the client
      * @return HashMap
      */
-    private HashMap getParams() {
+    private HashMap<String, Object> getParams() {
         HashMap<String, Object> result = new HashMap<>();
         result.put("timestamp", System.currentTimeMillis() / 1000L);
         return result;

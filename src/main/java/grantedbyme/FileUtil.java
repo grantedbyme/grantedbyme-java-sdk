@@ -28,28 +28,10 @@
 package grantedbyme;
 
 
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import javax.crypto.Cipher;
-import javax.crypto.Mac;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.security.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.zip.CRC32;
-import java.util.zip.Checksum;
 
 /**
  * CryptoUtil class
@@ -65,8 +47,11 @@ public final class FileUtil {
      * @return
      * @throws IOException
      */
-    static String readFile(String path, Charset encoding)
+    public static String readFile(String path, Charset encoding)
             throws IOException {
+        if(encoding == null) {
+            encoding = Charset.forName("utf-8");
+        }
         byte[] encoded = Files.readAllBytes(Paths.get(path));
         return new String(encoded, encoding);
     }

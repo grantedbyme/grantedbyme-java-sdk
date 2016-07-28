@@ -27,7 +27,6 @@
  */
 package grantedbyme;
 
-import java.nio.charset.Charset;
 import java.security.Security;
 
 /**
@@ -55,8 +54,8 @@ public class Main {
                 }
                 System.out.println("Reading 'private_key.pem' and 'server_key.pem' from: " + baseDir);
                 // read keys
-                String privateKey = FileUtil.readFile(baseDir + "private_key.pem", Charset.forName("utf-8"));
-                String serverKey = FileUtil.readFile(baseDir + "server_key.pem", Charset.forName("utf-8"));
+                String privateKey = FileUtil.readFile(baseDir + "private_key.pem", null);
+                String serverKey = FileUtil.readFile(baseDir + "server_key.pem", null);
                 // create sdk
                 GrantedByMe sdk = new GrantedByMe(privateKey, serverKey);
                 // run command
