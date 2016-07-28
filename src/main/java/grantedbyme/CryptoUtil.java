@@ -126,6 +126,25 @@ public final class CryptoUtil {
     }
 
     /**
+     * TBD
+     * @param requestBody
+     * @param serverPublicKey
+     * @param privateKey
+     * @return
+     */
+    public static JSONObject encryptAndSign(JSONObject requestBody, String serverPublicKey, String privateKey) {
+        try {
+            return CryptoUtil.encryptAndSign(requestBody,
+                    CryptoUtil.loadPublic(serverPublicKey),
+                    CryptoUtil.loadPrivate(privateKey).getPrivate(),
+                    CryptoUtil.sha512(serverPublicKey));
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
+    /**
      * JSON object encryptor helper
      * @param requestBody
      * @param serverPublicKey
@@ -206,6 +225,24 @@ public final class CryptoUtil {
         params.put("public_hash", publicHash);
         // return
         return new JSONObject(params);
+    }
+
+    /**
+     * TBD
+     * @param responseBody
+     * @param serverPublicKey
+     * @param privateKey
+     * @return
+     */
+    public static JSONObject decryptAndVerify(JSONObject responseBody, String serverPublicKey, String privateKey) {
+        try {
+            return CryptoUtil.decryptAndVerify(responseBody,
+                    CryptoUtil.loadPublic(serverPublicKey),
+                    CryptoUtil.loadPrivate(privateKey).getPrivate());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -305,6 +342,7 @@ public final class CryptoUtil {
      */
     public static String sha512(String source) {
         source = source.replace("\r\n", "\n");
+        source = source.replace("\r", "\n");
         try {
             return CryptoUtil.hexFromBytes(hash(source.getBytes(), null, "SHA-512"));
         } catch (Exception e) {
