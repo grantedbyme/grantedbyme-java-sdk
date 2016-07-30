@@ -42,36 +42,38 @@ public class Main {
 
     public static void main(String[] args) {
 
-            try {
-                // parse commands
-                String baseDir = "/tmp/";
-                String command = "getSessionToken";
-                if (args.length >= 1) {
-                    baseDir = args[0];
-                }
-                if (args.length >= 2) {
-                    command = args[1];
-                }
-                System.out.println("Reading 'private_key.pem' and 'server_key.pem' from: " + baseDir);
-                // read keys
-                String privateKey = FileUtil.readFile(baseDir + "private_key.pem", null);
-                String serverKey = FileUtil.readFile(baseDir + "server_key.pem", null);
-                // create sdk
-                GrantedByMe sdk = new GrantedByMe(privateKey, serverKey);
-                // run command
-                Object result = null;
-                if(command.equals("getSessionToken")) {
-                    result = sdk.getSessionToken();
-                } else if(command.equals("getAccountToken")) {
-                    result = sdk.getAccountToken();
-                }
-                if(result != null) {
-                    System.out.println(result.toString());
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new RuntimeException("Error initializing GrantedByMe SDK");
+        try {
+            // parse commands
+            String baseDir = "/tmp/";
+            String command = "getSessionToken";
+            if (args.length >= 1) {
+                baseDir = args[0];
             }
+            if (args.length >= 2) {
+                command = args[1];
+            }
+            System.out.println("Reading 'private_key.pem' and 'server_key.pem' from: " + baseDir);
+            // read keys
+            String privateKey = FileUtil.readFile(baseDir + "private_key.pem", null);
+            String serverKey = FileUtil.readFile(baseDir + "server_key.pem", null);
+            // create sdk
+            GrantedByMe sdk = new GrantedByMe(privateKey, serverKey);
+            // run command
+            Object result = null;
+            if (command.equals("getSessionToken")) {
+                result = sdk.getSessionToken();
+            } else if (command.equals("getAccountToken")) {
+                result = sdk.getAccountToken();
+            } else if (command.equals("getRegisterToken")) {
+                result = sdk.getRegisterToken();
+            }
+            if (result != null) {
+                System.out.println(result.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Error initializing GrantedByMe SDK");
+        }
 
     }
 }

@@ -41,7 +41,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.8-master
+ * GrantedByMe API class v1.0.9-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -53,13 +53,18 @@ public class GrantedByMe {
     private String apiURL;
     private Boolean isDebug;
 
+    public static final int TOKEN_ACC = 1;
+    public static final int TOKEN_AUTH = 2;
+    public static final int TOKEN_REG = 4;
+
     /**
      * Constructor
+     *
      * @param privateKey Your private key encoded in PEM format
-     * @param serverKey GrantedByMe server public key encoded in PEM format
+     * @param serverKey  GrantedByMe server public key encoded in PEM format
      */
     public GrantedByMe(String privateKey, String serverKey) {
-        this.isDebug = true;
+        this.isDebug = false;
         this.apiURL = "https://api.grantedby.me/v1/service/";
         try {
             this.privateKey = CryptoUtil.loadPrivate(privateKey).getPrivate();
@@ -72,6 +77,7 @@ public class GrantedByMe {
 
     /**
      * Debug mode setter
+     *
      * @param isEnabled Indicates whether the debug mode is enabled
      */
     public void setDebugMode(Boolean isEnabled) {
@@ -80,6 +86,7 @@ public class GrantedByMe {
 
     /**
      * API URL setter
+     *
      * @param url The GrantedByMe service API URL
      */
     public void setApiUrl(String url) {
@@ -88,6 +95,7 @@ public class GrantedByMe {
 
     /**
      * Initiate key exchange for encrypted communication.
+     *
      * @param publicKey Your public key encoded in PEM format
      * @return JSONObject
      */
@@ -100,8 +108,9 @@ public class GrantedByMe {
 
     /**
      * Active pending service using service key and owner authentication hash.
+     *
      * @param serviceKey The activation service key
-     * @param grantor The owner authentication hash
+     * @param grantor    The owner authentication hash
      * @return JSONObject
      */
     public JSONObject activateService(String serviceKey, String grantor) {
@@ -113,6 +122,7 @@ public class GrantedByMe {
 
     /**
      * De-active the service.
+     *
      * @return JSONObject
      */
     public JSONObject deactivateService() {
@@ -121,28 +131,8 @@ public class GrantedByMe {
     }
 
     /**
-     * Retrieve user account registration token.
-     * @return JSONObject
-     */
-    public JSONObject getAccountToken() {
-        HashMap<String, Object> params = getParams();
-        params.put("token_type", 1);
-        return post(params, "get_session_token");
-    }
-
-    /**
-     * Retrieve user account registration token state.
-     * @param token The token recieved from getAccountToken
-     * @return JSONObject
-     */
-    public JSONObject getAccountState(String token) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        return post(params, "get_session_state");
-    }
-
-    /**
      * Link an existing user account with a GBM account.
+     *
      * @param token
      * @param grantor
      * @return JSONObject
@@ -156,6 +146,7 @@ public class GrantedByMe {
 
     /**
      * Unlink an existing user account with a GBM account.
+     *
      * @param grantor
      * @return JSONObject
      */
@@ -166,22 +157,71 @@ public class GrantedByMe {
     }
 
     /**
-     * Retrieve user account authentication token.
+     * Retrieve an account link token.
+     *
+     * @return JSONObject
+     */
+    public JSONObject getAccountToken() {
+        return getToken(TOKEN_ACC);
+    }
+
+    /**
+     * Retrieve an authentication token.
+     *
      * @return JSONObject
      */
     public JSONObject getSessionToken() {
+        return getToken(TOKEN_AUTH);
+    }
+
+    /**
+     * Retrieve a registration token.
+     *
+     * @return JSONObject
+     */
+    public JSONObject getRegisterToken() {
+        return getToken(TOKEN_REG);
+    }
+
+    /**
+     * Retrieve user account authentication token.
+     *
+     * @return JSONObject
+     */
+    public JSONObject getToken(int type) {
         HashMap<String, Object> params = getParams();
-        params.put("token_type", 2);
+        params.put("token_type", type);
         params.put("http_user_agent", "Unknown");
         params.put("remote_addr", "0.0.0.0");
         return post(params, "get_session_token");
     }
 
     /**
-     * Retrieve user account authentication token state.
+     * Returns the token status
+     *
      * @param token
      * @return JSONObject
      */
+    public JSONObject getTokenState(String token) {
+        HashMap<String, Object> params = getParams();
+        params.put("token", token);
+        return post(params, "get_session_state");
+    }
+
+    /**
+     * Deprecated, use getTokenState
+     */
+    @Deprecated
+    public JSONObject getAccountState(String token) {
+        HashMap<String, Object> params = getParams();
+        params.put("token", token);
+        return post(params, "get_session_state");
+    }
+
+    /**
+     * Deprecated, use getTokenState
+     */
+    @Deprecated
     public JSONObject getSessionState(String token) {
         HashMap<String, Object> params = getParams();
         params.put("token", token);
@@ -189,29 +229,18 @@ public class GrantedByMe {
     }
 
     /**
-     * Retrieve user account authentication token.
-     * @return JSONObject
+     * Deprecated, use getTokenState
      */
-    public JSONObject getRegisterToken() {
-        HashMap<String, Object> params = getParams();
-        params.put("token_type", 4);
-        params.put("http_user_agent", "Unknown");
-        params.put("remote_addr", "0.0.0.0");
-        return post(params, "get_session_token");
-    }
-
-    /**
-     * Retrieve user account authentication token state.
-     * @param token
-     * @return JSONObject
-     */
+    @Deprecated
     public JSONObject getRegisterState(String token) {
         HashMap<String, Object> params = getParams();
         params.put("token", token);
         return post(params, "get_session_state");
     }
+
     /**
      * Returns the default HTTP parameters sent by the client
+     *
      * @return HashMap
      */
     private HashMap<String, Object> getParams() {
@@ -222,6 +251,7 @@ public class GrantedByMe {
 
     /**
      * Logging helper
+     *
      * @param message
      */
     private void log(String message) {
@@ -230,6 +260,7 @@ public class GrantedByMe {
 
     /**
      * HTTP communication helper
+     *
      * @param params
      * @param operation
      * @return

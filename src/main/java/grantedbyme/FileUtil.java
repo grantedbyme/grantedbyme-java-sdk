@@ -42,6 +42,7 @@ public final class FileUtil {
 
     /**
      * Reads a local file.
+     *
      * @param path
      * @param encoding
      * @return
@@ -49,7 +50,7 @@ public final class FileUtil {
      */
     public static String readFile(String path, Charset encoding)
             throws IOException {
-        if(encoding == null) {
+        if (encoding == null) {
             encoding = Charset.forName("utf-8");
         }
         byte[] encoded = Files.readAllBytes(Paths.get(path));
