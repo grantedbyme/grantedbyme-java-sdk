@@ -165,7 +165,7 @@ public final class CryptoUtil {
         // Convert JSON String to Bytes
         byte[] plainBytes = requestBody.toString().getBytes();
         // AES cipher
-        byte[] cipherKey = randomBytes(32);
+        byte[] cipherKey = randomBytes(16);
         byte[] cipherIv = randomBytes(16);
         byte[] cipherBytes;
         byte[] cipherSignature;
@@ -179,7 +179,8 @@ public final class CryptoUtil {
         String signatureText;
         // AES encrypt -> RSA encrypt -> RSA sign
         try {
-            if (requestBody.toString().length() < 255) {
+            System.out.println(plainBytes.length);
+            if (plainBytes.length < 215) {
                 cipherText = null;
                 final Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", PROVIDER);
                 cipher.init(Cipher.ENCRYPT_MODE, serverPublicKey);
