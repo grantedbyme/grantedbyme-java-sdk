@@ -290,8 +290,10 @@ public final class CryptoUtil {
             result = (JSONObject) new JSONParser().parse(payloadJson);  // string to object
             // If server sent payload and signature only, and decrypted payload does not contain secret keys
             // assume that the message is non-compound RSA encrypted and signed message.
-            if (!responseBody.containsKey("message") && !result.containsKey("signature") && !result.containsKey("cipher_key") && !result.containsKey("cipher_iv")) {
-                return result;
+            if (!result.containsKey("signature") && !result.containsKey("cipher_key") && !result.containsKey("cipher_iv")) {
+                if(!responseBody.containsKey("message") || responseBody.get("message") == null) {
+                    return result;
+                }
             }
             // Use AES encryption for messages longer than the available RSA key space
             byte[] message = Base64.decode((String) responseBody.get("message"));
