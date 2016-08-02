@@ -41,7 +41,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.13-master
+ * GrantedByMe API class v1.0.14-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -53,9 +53,17 @@ public class GrantedByMe {
     private String apiURL;
     private Boolean isDebug;
 
-    public static final int TOKEN_ACC = 1;
-    public static final int TOKEN_AUTH = 2;
-    public static final int TOKEN_REG = 4;
+    public static final int TOKEN_ACCOUNT = 1;
+    public static final int TOKEN_AUTHENTICATE = 2;
+    public static final int TOKEN_REGISTER = 4;
+
+    public static final int STATUS_UNREGISTERED = 0;
+    public static final int STATUS_PENDING = 1;
+    public static final int STATUS_LINKED = 2;
+    public static final int STATUS_VALIDATED = 3;
+    public static final int STATUS_EXPIRED = 4;
+    public static final int STATUS_BANNED = 5;
+    public static final int STATUS_DELETED = 6;
 
     /**
      * Constructor
@@ -162,7 +170,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getAccountToken() {
-        return getToken(TOKEN_ACC);
+        return getToken(TOKEN_ACCOUNT);
     }
 
     /**
@@ -171,7 +179,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getSessionToken() {
-        return getToken(TOKEN_AUTH);
+        return getToken(TOKEN_AUTHENTICATE);
     }
 
     /**
@@ -180,7 +188,7 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject getRegisterToken() {
-        return getToken(TOKEN_REG);
+        return getToken(TOKEN_REGISTER);
     }
 
     /**
