@@ -196,18 +196,19 @@ public final class CryptoUtil {
                 cipherBytes = crypt(plainBytes, cipherKey, cipherIv, Cipher.ENCRYPT_MODE);
                 cipherText = new String(Base64.encode(cipherBytes), "UTF-8");
                 // Sign using HMAC
-                final Mac hmac = Mac.getInstance("HmacSHA512", PROVIDER);
-                final SecretKeySpec keySpec = new SecretKeySpec(cipherKey, "HmacSHA512");
+                final Mac hmac = Mac.getInstance("HmacSHA256", PROVIDER);
+                final SecretKeySpec keySpec = new SecretKeySpec(cipherKey, "HmacSHA256");
                 hmac.init(keySpec);
                 cipherSignature = hmac.doFinal(plainBytes);
                 // Wrap AES cipher data into JSON
                 Map<String, Object> cipherParams = new HashMap<>();
-                cipherParams.put("cipher_key", Base64.encode(cipherKey));
-                cipherParams.put("cipher_iv", Base64.encode(cipherIv));
-                cipherParams.put("signature", Base64.encode(cipherSignature));
+                cipherParams.put("cipher_key", new String(Base64.encode(cipherKey), "UTF-8"));
+                cipherParams.put("cipher_iv", new String(Base64.encode(cipherIv), "UTF-8"));
+                cipherParams.put("signature", new String(Base64.encode(cipherSignature), "UTF-8"));
                 Long timestamp = System.currentTimeMillis() / 1000L;
                 cipherParams.put("timestamp", timestamp);
                 cipherJSON = new JSONObject(cipherParams);
+                // System.out.println(cipherJSON.toJSONString());
                 final Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", PROVIDER);
                 cipher.init(Cipher.ENCRYPT_MODE, serverPublicKey);
                 payloadBytes = cipher.doFinal(cipherJSON.toString().getBytes());
