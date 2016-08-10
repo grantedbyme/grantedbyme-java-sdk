@@ -292,7 +292,7 @@ public final class CryptoUtil {
             // If server sent payload and signature only, and decrypted payload does not contain secret keys
             // assume that the message is non-compound RSA encrypted and signed message.
             if (!result.containsKey("signature") && !result.containsKey("cipher_key") && !result.containsKey("cipher_iv")) {
-                if(!responseBody.containsKey("message") || responseBody.get("message") == null) {
+                if (!responseBody.containsKey("message") || responseBody.get("message") == null) {
                     return result;
                 }
             }

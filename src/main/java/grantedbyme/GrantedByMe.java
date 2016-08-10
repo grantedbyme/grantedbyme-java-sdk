@@ -36,22 +36,27 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.16-master
+ * GrantedByMe API class v1.0.17-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
 public class GrantedByMe {
 
-    private PrivateKey privateKey;
-    private PublicKey serverKey;
-    private String publicHash;
-    private String apiURL;
-    private Boolean isDebug;
+    public PrivateKey privateKey;
+
+    public PublicKey serverKey;
+
+    public String publicHash;
+
+    public String apiURL;
+
+    public Boolean isDebug;
 
     public static final int TOKEN_ACCOUNT = 1;
     public static final int TOKEN_AUTHENTICATE = 2;
@@ -83,20 +88,12 @@ public class GrantedByMe {
         }
     }
 
-    /**
-     * Debug mode setter
-     *
-     * @param isEnabled Indicates whether the debug mode is enabled
-     */
+    @Deprecated
     public void setDebugMode(Boolean isEnabled) {
         this.isDebug = isEnabled;
     }
 
-    /**
-     * API URL setter
-     *
-     * @param url The GrantedByMe service API URL
-     */
+    @Deprecated
     public void setApiUrl(String url) {
         this.apiURL = url;
     }
@@ -122,6 +119,29 @@ public class GrantedByMe {
      * @return JSONObject
      */
     public JSONObject activateService(String serviceKey, String grantor) {
+        // generate RSA key pair if not exists
+        if (privateKey == null) {
+            try {
+                KeyPair kp = CryptoUtil.generateKeyPair();
+                privateKey = kp.getPrivate();
+            } catch (Exception e) {
+                if (this.isDebug) e.printStackTrace();
+            }
+        }
+        // get server public key if not exists
+        if (serverKey == null) {
+            JSONObject handshakeResult = activateHandshake(null);
+            if ((Boolean) handshakeResult.get("success")) {
+                try {
+                    String publicPEM = (String) handshakeResult.get("public_key");
+                    serverKey = CryptoUtil.loadPublic(publicPEM);
+                    publicHash = CryptoUtil.sha512(publicPEM);
+                } catch (Exception e) {
+                    if (this.isDebug) e.printStackTrace();
+                }
+            }
+        }
+        // API call
         HashMap<String, Object> params = getParams();
         params.put("grantor", grantor);
         params.put("service_key", serviceKey);
@@ -174,12 +194,34 @@ public class GrantedByMe {
     }
 
     /**
+     * Retrieve an account link token.
+     *
+     * @param userAgent The client user-agent identifier
+     * @param ip        The client IP address
+     * @return JSONObject
+     */
+    public JSONObject getAccountToken(String ip, String userAgent) {
+        return getToken(TOKEN_ACCOUNT, ip, userAgent);
+    }
+
+    /**
      * Retrieve an authentication token.
      *
      * @return JSONObject
      */
     public JSONObject getSessionToken() {
         return getToken(TOKEN_AUTHENTICATE);
+    }
+
+    /**
+     * Retrieve an authentication token.
+     *
+     * @param userAgent The client user-agent identifier
+     * @param ip        The client IP address
+     * @return JSONObject
+     */
+    public JSONObject getSessionToken(String ip, String userAgent) {
+        return getToken(TOKEN_AUTHENTICATE, ip, userAgent);
     }
 
     /**
@@ -192,15 +234,39 @@ public class GrantedByMe {
     }
 
     /**
+     * Retrieve a registration token.
+     *
+     * @param userAgent The client user-agent identifier
+     * @param ip        The client IP address
+     * @return JSONObject
+     */
+    public JSONObject getRegisterToken(String ip, String userAgent) {
+        return getToken(TOKEN_REGISTER, ip, userAgent);
+    }
+
+    /**
      * Retrieve user account authentication token.
      *
+     * @param type The token type
      * @return JSONObject
      */
     public JSONObject getToken(int type) {
+        return getToken(type, "0.0.0.0", "Unknown");
+    }
+
+    /**
+     * Retrieve user account authentication token.
+     *
+     * @param type
+     * @param userAgent The client user-agent identifier
+     * @param ip        The client IP address
+     * @return JSONObject
+     */
+    public JSONObject getToken(int type, String ip, String userAgent) {
         HashMap<String, Object> params = getParams();
         params.put("token_type", type);
-        params.put("http_user_agent", "Unknown");
-        params.put("remote_addr", "0.0.0.0");
+        params.put("http_user_agent", userAgent);
+        params.put("remote_addr", ip);
         return post(params, "get_session_token");
     }
 
@@ -217,33 +283,15 @@ public class GrantedByMe {
     }
 
     /**
-     * Deprecated, use getTokenState
+     * Revokes an active session token
+     *
+     * @param token
+     * @return JSONObject
      */
-    @Deprecated
-    public JSONObject getAccountState(String token) {
+    public JSONObject revokeSessionToken(String token) {
         HashMap<String, Object> params = getParams();
         params.put("token", token);
-        return post(params, "get_session_state");
-    }
-
-    /**
-     * Deprecated, use getTokenState
-     */
-    @Deprecated
-    public JSONObject getSessionState(String token) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        return post(params, "get_session_state");
-    }
-
-    /**
-     * Deprecated, use getTokenState
-     */
-    @Deprecated
-    public JSONObject getRegisterState(String token) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        return post(params, "get_session_state");
+        return post(params, "revoke_session_token");
     }
 
     /**
@@ -279,9 +327,13 @@ public class GrantedByMe {
         String urlParams = JSONObject.toJSONString(params);
         log("plainParams: " + urlParams);
         JSONObject cipherJSON = new JSONObject(params);
-        JSONObject cipherParams = CryptoUtil.encryptAndSign(cipherJSON, serverKey, privateKey, publicHash);
+        JSONObject cipherParams;
+        if (operation.equals("activate_handshake")) {
+            cipherParams = cipherJSON;
+        } else {
+            cipherParams = CryptoUtil.encryptAndSign(cipherJSON, serverKey, privateKey, publicHash);
+        }
         log("cipherParams: " + cipherParams.toJSONString());
-
         URL url;
         HttpURLConnection connection = null;
         try {
@@ -311,7 +363,12 @@ public class GrantedByMe {
             }
             bufferedReader.close();
             JSONObject cipherResult = (JSONObject) new JSONParser().parse(stringBuffer.toString());
-            JSONObject plainResult = CryptoUtil.decryptAndVerify(cipherResult, serverKey, privateKey);
+            JSONObject plainResult;
+            if (operation.equals("activate_handshake")) {
+                plainResult = cipherResult;
+            } else {
+                plainResult = CryptoUtil.decryptAndVerify(cipherResult, serverKey, privateKey);
+            }
             if (isDebug) log(cipherResult.toJSONString());
             if (isDebug) log(plainResult.toJSONString());
             return plainResult;
