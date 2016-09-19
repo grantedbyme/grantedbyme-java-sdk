@@ -53,19 +53,16 @@ public class Main {
                 command = args[1];
             }
             System.out.println("Reading 'private_key.pem' and 'server_key.pem' from: " + baseDir);
-            // read keys
-            String privateKey = FileUtil.readFile(baseDir + "private_key.pem", null);
-            String serverKey = FileUtil.readFile(baseDir + "server_key.pem", null);
             // create sdk
-            GrantedByMe sdk = new GrantedByMe(privateKey, serverKey);
+            GrantedByMe sdk = GrantedByMe.fromPemFiles(baseDir + "private_key.pem", baseDir + "server_key.pem");
             // run command
             Object result = null;
             if (command.equals("getSessionToken")) {
-                result = sdk.getSessionToken();
+                result = sdk.getChallenge(GrantedByMe.TOKEN_AUTHENTICATE);
             } else if (command.equals("getAccountToken")) {
-                result = sdk.getAccountToken();
+                result = sdk.getChallenge(GrantedByMe.TOKEN_ACCOUNT);
             } else if (command.equals("getRegisterToken")) {
-                result = sdk.getRegisterToken();
+                result = sdk.getChallenge(GrantedByMe.TOKEN_REGISTER);
             }
             if (result != null) {
                 System.out.println(result.toString());

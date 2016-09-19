@@ -353,14 +353,14 @@ public final class CryptoUtil {
     /**
      * Generate a SHA-512 digest from a string input
      *
-     * @param source
+     * @param data
      * @return
      */
-    public static String sha512(String source) {
-        source = source.replace("\r\n", "\n");
-        source = source.replace("\r", "\n");
+    public static String sha512(String data) {
+        data = data.replace("\r\n", "\n");
+        data = data.replace("\r", "\n");
         try {
-            return CryptoUtil.hexFromBytes(hash(source.getBytes(), null, "SHA-512"));
+            return CryptoUtil.hexFromBytes(hash(data.getBytes(), null, "SHA-512"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -384,12 +384,12 @@ public final class CryptoUtil {
     /**
      * Generates secure random bytes with given length
      *
-     * @param len
+     * @param length
      * @return
      */
-    public static byte[] randomBytes(int len) {
+    public static byte[] randomBytes(int length) {
         SecureRandom random = new SecureRandom();
-        byte result[] = new byte[len]; //IV AES is always 16bytes
+        byte result[] = new byte[length];
         random.nextBytes(result);
         return result;
     }
@@ -411,7 +411,6 @@ public final class CryptoUtil {
         }
         return new String(hexChars);
     }
-
 
 }
 

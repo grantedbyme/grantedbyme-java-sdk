@@ -30,19 +30,19 @@ package grantedbyme;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.23-master
+ * GrantedByMe API class v1.0.24-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -71,254 +71,199 @@ public class GrantedByMe {
     public static final int STATUS_DELETED = 6;
 
     /**
-     * Constructor
+     * Creates a new GrantedByMe SDK instance.
      *
-     * @param privateKey Your private key encoded in PEM format
-     * @param serverKey  GrantedByMe server public key encoded in PEM format
+     * @param privateKey Service RSA private key encoded in PEM format
+     * @param serverKey  Server RSA public key encoded in PEM format
      */
     public GrantedByMe(String privateKey, String serverKey) {
         this.isDebug = false;
         this.apiURL = "https://api.grantedby.me/v1/service/";
-        try {
-            this.privateKey = CryptoUtil.loadPrivate(privateKey).getPrivate();
-            this.serverKey = CryptoUtil.loadPublic(serverKey);
-            this.publicHash = CryptoUtil.sha512(serverKey);
-        } catch (Exception e) {
-            if (this.isDebug) e.printStackTrace();
+        if (privateKey != null && serverKey != null) {
+            try {
+                this.privateKey = CryptoUtil.loadPrivate(privateKey).getPrivate();
+                this.serverKey = CryptoUtil.loadPublic(serverKey);
+                this.publicHash = CryptoUtil.sha512(serverKey);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    @Deprecated
-    public void setDebugMode(Boolean isEnabled) {
-        this.isDebug = isEnabled;
+    ////////////////////////////////////////
+    // Static methods
+    ////////////////////////////////////////
+
+    /**
+     * Factory method to create new GrantedByMe SDK class instance loading local key files.
+     * @param privateKeyPath The path to the service RSA private key
+     * @param serverKeyPath The path to the server RSA public key
+     * @return GrantedByMe
+     */
+    public static GrantedByMe fromPemFiles(String privateKeyPath, String serverKeyPath) {
+        try {
+            return new GrantedByMe(GrantedByMe.readFile(privateKeyPath), GrantedByMe.readFile(serverKeyPath));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    @Deprecated
-    public void setApiUrl(String url) {
-        this.apiURL = url;
+    /**
+     * Reads an utf-8 encoded string file.
+     *
+     * @param path The path to the file
+     * @return
+     * @throws IOException
+     */
+    public static String readFile(String path)
+            throws IOException {
+        byte[] encoded = Files.readAllBytes(Paths.get(path));
+        return new String(encoded, Charset.forName("utf-8"));
     }
+
+    ////////////////////////////////////////
+    // API
+    ////////////////////////////////////////
 
     /**
      * Initiate key exchange for encrypted communication.
      *
-     * @param publicKey Your public key encoded in PEM format
+     * @param publicKey Service RSA public key encoded in PEM format
      * @return JSONObject
      */
     private JSONObject activateHandshake(String publicKey) {
-        HashMap<String, Object> result = new HashMap<>();
-        result.put("timestamp", System.currentTimeMillis() / 1000L);
-        result.put("public_key", publicKey);
-        return post(result, "activate_handshake");
+        HashMap<String, Object> params = getParams(null, null);
+        params.put("public_key", publicKey);
+        return post(params, "activate_handshake");
     }
 
     /**
-     * Active pending service using service key and owner authentication hash.
+     * Active pending service using service key.
      *
      * @param serviceKey The activation service key
-     * @param grantor    The owner authentication hash
      * @return JSONObject
      */
-    public JSONObject activateService(String serviceKey, String grantor) {
-        // generate RSA key pair if not exists
-        if (privateKey == null) {
-            try {
-                KeyPair kp = CryptoUtil.generateKeyPair();
-                privateKey = kp.getPrivate();
-            } catch (Exception e) {
-                if (this.isDebug) e.printStackTrace();
-            }
-        }
-        // get server public key if not exists
-        if (serverKey == null) {
-            JSONObject handshakeResult = activateHandshake(null);
+    public JSONObject activateService(String serviceKey) {
+        try {
+            KeyPair kp = CryptoUtil.generateKeyPair();
+            privateKey = kp.getPrivate();
+            JSONObject handshakeResult = activateHandshake(CryptoUtil.savePublic(kp.getPublic().getEncoded()));
             if ((Boolean) handshakeResult.get("success")) {
-                try {
-                    String publicPEM = (String) handshakeResult.get("public_key");
-                    serverKey = CryptoUtil.loadPublic(publicPEM);
-                    publicHash = CryptoUtil.sha512(publicPEM);
-                } catch (Exception e) {
-                    if (this.isDebug) e.printStackTrace();
-                }
+                String publicPEM = (String) handshakeResult.get("public_key");
+                serverKey = CryptoUtil.loadPublic(publicPEM);
+                publicHash = CryptoUtil.sha512(publicPEM);
             }
+        } catch (Exception e) {
+            if (this.isDebug) e.printStackTrace();
         }
         // API call
-        HashMap<String, Object> params = getParams();
-        params.put("grantor", grantor);
+        HashMap<String, Object> params = getParams(null, null);
         params.put("service_key", serviceKey);
         return post(params, "activate_service");
     }
 
     /**
-     * De-active the service.
+     * Links a service user account with a GrantedByMe account.
      *
+     * @param challenge The challenge used to verify the user
+     * @param authenticator_secret The secret used for user authentication
      * @return JSONObject
      */
-    public JSONObject deactivateService() {
-        HashMap<String, Object> params = getParams();
-        return post(params, "deactivate_service");
-    }
-
-    /**
-     * Link an existing user account with a GBM account.
-     *
-     * @param token
-     * @param grantor
-     * @return JSONObject
-     */
-    public JSONObject linkAccount(String token, String grantor) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        params.put("grantor", grantor);
+    public JSONObject linkAccount(String challenge, String authenticator_secret) {
+        HashMap<String, Object> params = getParams(null, null);
+        params.put("challenge", challenge);
+        params.put("authenticator_secret", authenticator_secret);
         return post(params, "link_account");
     }
 
     /**
-     * Unlink an existing user account with a GBM account.
+     * Un-links a service user account with a GrantedByMe account.
      *
-     * @param grantor
+     * @param authenticator_secret The secret used for user authentication
      * @return JSONObject
      */
-    public JSONObject unlinkAccount(String grantor) {
-        HashMap<String, Object> params = getParams();
-        params.put("grantor", CryptoUtil.sha512(grantor));
+    public JSONObject unlinkAccount(String authenticator_secret) {
+        HashMap<String, Object> params = getParams(null, null);
+        params.put("authenticator_secret", authenticator_secret);
         return post(params, "unlink_account");
     }
 
     /**
-     * Retrieve an account link token.
+     * Returns a challenge with required type.
      *
+     * @param challenge_type The type of requested challenge
      * @return JSONObject
      */
-    public JSONObject getAccountToken() {
-        return getToken(TOKEN_ACCOUNT);
+    public JSONObject getChallenge(int challenge_type) {
+        return getChallenge(challenge_type, null, null);
     }
 
     /**
-     * Retrieve an account link token.
+     * Returns a challenge with required type.
      *
-     * @param userAgent The client user-agent identifier
+     * @param challenge_type The type of requested challenge
+     * @param ip             The client IP address
+     * @param userAgent      The client user-agent identifier
+     * @return JSONObject
+     */
+    public JSONObject getChallenge(int challenge_type, String ip, String userAgent) {
+        HashMap<String, Object> params = getParams(ip, userAgent);
+        params.put("challenge_type", challenge_type);
+        return post(params, "get_challenge");
+    }
+
+    /**
+     * Returns a challenge state.
+     *
+     * @param challenge The challenge to check
+     * @return JSONObject
+     */
+    public JSONObject getChallengeState(String challenge) {
+        HashMap<String, Object> params = getParams(null, null);
+        params.put("challenge", challenge);
+        return post(params, "get_challenge_state");
+    }
+
+    /**
+     * Notify the GrantedByMe server about the user has been logged out from the service.
+     *
+     * @param challenge The challenge representing an active authentication session
+     * @return JSONObject
+     */
+    public JSONObject revokeChallenge(String challenge) {
+        HashMap<String, Object> params = getParams(null, null);
+        params.put("challenge", challenge);
+        return post(params, "revoke_challenge");
+    }
+
+    ////////////////////////////////////////
+    // Helpers
+    ////////////////////////////////////////
+
+    /**
+     * Returns the default HTTP parameters.
+     *
      * @param ip        The client IP address
-     * @return JSONObject
-     */
-    public JSONObject getAccountToken(String ip, String userAgent) {
-        return getToken(TOKEN_ACCOUNT, ip, userAgent);
-    }
-
-    /**
-     * Retrieve an authentication token.
-     *
-     * @return JSONObject
-     */
-    public JSONObject getSessionToken() {
-        return getToken(TOKEN_AUTHENTICATE);
-    }
-
-    /**
-     * Retrieve an authentication token.
-     *
      * @param userAgent The client user-agent identifier
-     * @param ip        The client IP address
-     * @return JSONObject
+     * @return
      */
-    public JSONObject getSessionToken(String ip, String userAgent) {
-        return getToken(TOKEN_AUTHENTICATE, ip, userAgent);
+    private HashMap<String, Object> getParams(String ip, String userAgent) {
+        HashMap<String, Object> params = new HashMap<>();
+        params.put("timestamp", System.currentTimeMillis() / 1000L);
+        if (userAgent != null) {
+            params.put("http_user_agent", userAgent);
+        }
+        if (ip != null) {
+            params.put("remote_addr", ip);
+        }
+        return params;
     }
 
     /**
-     * Retrieve a registration token.
+     * Sends a HTTP (POST) API request.
      *
-     * @return JSONObject
-     */
-    public JSONObject getRegisterToken() {
-        return getToken(TOKEN_REGISTER);
-    }
-
-    /**
-     * Retrieve a registration token.
-     *
-     * @param userAgent The client user-agent identifier
-     * @param ip        The client IP address
-     * @return JSONObject
-     */
-    public JSONObject getRegisterToken(String ip, String userAgent) {
-        return getToken(TOKEN_REGISTER, ip, userAgent);
-    }
-
-    /**
-     * Retrieve user account authentication token.
-     *
-     * @param type The token type
-     * @return JSONObject
-     */
-    public JSONObject getToken(int type) {
-        return getToken(type, "0.0.0.0", "Unknown");
-    }
-
-    /**
-     * Retrieve user account authentication token.
-     *
-     * @param type
-     * @param userAgent The client user-agent identifier
-     * @param ip        The client IP address
-     * @return JSONObject
-     */
-    public JSONObject getToken(int type, String ip, String userAgent) {
-        HashMap<String, Object> params = getParams();
-        params.put("token_type", type);
-        params.put("http_user_agent", userAgent);
-        params.put("remote_addr", ip);
-        return post(params, "get_session_token");
-    }
-
-    /**
-     * Returns the token status
-     *
-     * @param token
-     * @return JSONObject
-     */
-    public JSONObject getTokenState(String token) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        return post(params, "get_session_state");
-    }
-
-    /**
-     * Revokes an active session token
-     *
-     * @param token
-     * @return JSONObject
-     */
-    public JSONObject revokeSessionToken(String token) {
-        HashMap<String, Object> params = getParams();
-        params.put("token", token);
-        return post(params, "revoke_session_token");
-    }
-
-    /**
-     * Returns the default HTTP parameters sent by the client
-     *
-     * @return HashMap
-     */
-    private HashMap<String, Object> getParams() {
-        HashMap<String, Object> result = new HashMap<>();
-        result.put("timestamp", System.currentTimeMillis() / 1000L);
-        return result;
-    }
-
-    /**
-     * Logging helper
-     *
-     * @param message
-     */
-    private void log(String message) {
-        if (isDebug) System.out.println("[GrantedByMe] " + message);
-    }
-
-    /**
-     * HTTP communication helper
-     *
-     * @param params
-     * @param operation
+     * @param params    The request parameter object
+     * @param operation The API operation name
      * @return
      */
     private JSONObject post(HashMap params, String operation) {
@@ -369,8 +314,8 @@ public class GrantedByMe {
             } else {
                 plainResult = CryptoUtil.decryptAndVerify(cipherResult, serverKey, privateKey);
             }
-            if (isDebug) log(cipherResult.toJSONString());
-            if (isDebug) log(plainResult.toJSONString());
+            log(cipherResult.toJSONString());
+            log(plainResult.toJSONString());
             return plainResult;
         } catch (Exception e) {
             if (this.isDebug) e.printStackTrace();
@@ -380,6 +325,95 @@ public class GrantedByMe {
                 connection.disconnect();
             }
         }
+    }
+
+    /**
+     * Logging helper.
+     *
+     * @param message
+     */
+    private void log(String message) {
+        if (isDebug) System.out.println("[GrantedByMe] " + message);
+    }
+
+    ////////////////////////////////////////
+    // Static
+    ////////////////////////////////////////
+
+    /**
+     * Generates a secure random authenticator secret.
+     * @return
+     */
+    public static String generateAuthenticatorSecret() {
+        return CryptoUtil.hexFromBytes(CryptoUtil.randomBytes(64));
+    }
+
+    /**
+     * Generates hash digest of an authenticator secret.
+     * @param authenticatorSecret The authenticator secret to hash
+     * @return
+     */
+    public static String hashAuthenticatorSecret(String authenticatorSecret) {
+        return CryptoUtil.sha512(authenticatorSecret);
+    }
+
+    ////////////////////////////////////////
+    // Deprecated
+    ////////////////////////////////////////
+
+    /**
+     * @deprecated Use getChallenge(TOKEN_ACCOUNT)
+     */
+    @Deprecated
+    public JSONObject getAccountToken() {
+        return getChallenge(TOKEN_ACCOUNT);
+    }
+
+    @Deprecated
+    public JSONObject getAccountToken(String ip, String userAgent) {
+        return getChallenge(TOKEN_ACCOUNT, ip, userAgent);
+    }
+
+    /**
+     * @deprecated Use getChallenge(TOKEN_AUTHENTICATE)
+     */
+    @Deprecated
+    public JSONObject getSessionToken() {
+        return getChallenge(TOKEN_AUTHENTICATE);
+    }
+
+    @Deprecated
+    public JSONObject getSessionToken(String ip, String userAgent) {
+        return getChallenge(TOKEN_AUTHENTICATE, ip, userAgent);
+    }
+
+    /**
+     * @deprecated Use getChallenge(TOKEN_REGISTER)
+     */
+    @Deprecated
+    public JSONObject getRegisterToken() {
+        return getChallenge(TOKEN_REGISTER);
+    }
+
+    @Deprecated
+    public JSONObject getRegisterToken(String ip, String userAgent) {
+        return getChallenge(TOKEN_REGISTER, ip, userAgent);
+    }
+
+
+    /**
+     * @deprecated Use revokeChallenge
+     */
+    @Deprecated
+    public JSONObject revokeSessionToken(String challenge) {
+        return revokeChallenge(challenge);
+    }
+
+    /**
+     * @deprecated Use getChallengeState
+     */
+    public JSONObject getTokenState(String challenge) {
+        return getChallengeState(challenge);
     }
 
 }
