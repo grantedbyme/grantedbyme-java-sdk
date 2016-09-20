@@ -58,11 +58,11 @@ public class Main {
             // run command
             Object result = null;
             if (command.equals("getSessionToken")) {
-                result = sdk.getChallenge(GrantedByMe.TOKEN_AUTHENTICATE);
+                result = sdk.getChallenge(GrantedByMe.CHALLENGE_AUTHENTICATE);
             } else if (command.equals("getAccountToken")) {
-                result = sdk.getChallenge(GrantedByMe.TOKEN_ACCOUNT);
+                result = sdk.getChallenge(GrantedByMe.CHALLENGE_AUTHORIZE);
             } else if (command.equals("getRegisterToken")) {
-                result = sdk.getChallenge(GrantedByMe.TOKEN_REGISTER);
+                result = sdk.getChallenge(GrantedByMe.CHALLENGE_PROFILE);
             }
             if (result != null) {
                 System.out.println(result.toString());

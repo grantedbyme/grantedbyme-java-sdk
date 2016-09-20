@@ -42,7 +42,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.24-master
+ * GrantedByMe API class v1.0.26-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -58,9 +58,9 @@ public class GrantedByMe {
 
     public Boolean isDebug;
 
-    public static final int TOKEN_ACCOUNT = 1;
-    public static final int TOKEN_AUTHENTICATE = 2;
-    public static final int TOKEN_REGISTER = 4;
+    public static final int CHALLENGE_AUTHORIZE = 1;
+    public static final int CHALLENGE_AUTHENTICATE = 2;
+    public static final int CHALLENGE_PROFILE = 4;
 
     public static final int STATUS_UNREGISTERED = 0;
     public static final int STATUS_PENDING = 1;
@@ -160,6 +160,16 @@ public class GrantedByMe {
         HashMap<String, Object> params = getParams(null, null);
         params.put("service_key", serviceKey);
         return post(params, "activate_service");
+    }
+
+    /**
+     * Deactivates a service for reactivation.
+     *
+     * @return JSONObject
+     */
+    public JSONObject deactivateService() {
+        HashMap<String, Object> params = getParams(null, null);
+        return post(params, "deactivate_service");
     }
 
     /**
@@ -362,42 +372,42 @@ public class GrantedByMe {
     ////////////////////////////////////////
 
     /**
-     * @deprecated Use getChallenge(TOKEN_ACCOUNT)
+     * @deprecated Use getChallenge(CHALLENGE_AUTHORIZE)
      */
     @Deprecated
     public JSONObject getAccountToken() {
-        return getChallenge(TOKEN_ACCOUNT);
+        return getChallenge(CHALLENGE_AUTHORIZE);
     }
 
     @Deprecated
     public JSONObject getAccountToken(String ip, String userAgent) {
-        return getChallenge(TOKEN_ACCOUNT, ip, userAgent);
+        return getChallenge(CHALLENGE_AUTHORIZE, ip, userAgent);
     }
 
     /**
-     * @deprecated Use getChallenge(TOKEN_AUTHENTICATE)
+     * @deprecated Use getChallenge(CHALLENGE_AUTHENTICATE)
      */
     @Deprecated
     public JSONObject getSessionToken() {
-        return getChallenge(TOKEN_AUTHENTICATE);
+        return getChallenge(CHALLENGE_AUTHENTICATE);
     }
 
     @Deprecated
     public JSONObject getSessionToken(String ip, String userAgent) {
-        return getChallenge(TOKEN_AUTHENTICATE, ip, userAgent);
+        return getChallenge(CHALLENGE_AUTHENTICATE, ip, userAgent);
     }
 
     /**
-     * @deprecated Use getChallenge(TOKEN_REGISTER)
+     * @deprecated Use getChallenge(CHALLENGE_PROFILE)
      */
     @Deprecated
     public JSONObject getRegisterToken() {
-        return getChallenge(TOKEN_REGISTER);
+        return getChallenge(CHALLENGE_PROFILE);
     }
 
     @Deprecated
     public JSONObject getRegisterToken(String ip, String userAgent) {
-        return getChallenge(TOKEN_REGISTER, ip, userAgent);
+        return getChallenge(CHALLENGE_PROFILE, ip, userAgent);
     }
 
 
