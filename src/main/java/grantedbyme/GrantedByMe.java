@@ -42,7 +42,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.26-master
+ * GrantedByMe API class v1.0.27-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
@@ -163,16 +163,6 @@ public class GrantedByMe {
     }
 
     /**
-     * Deactivates a service for reactivation.
-     *
-     * @return JSONObject
-     */
-    public JSONObject deactivateService() {
-        HashMap<String, Object> params = getParams(null, null);
-        return post(params, "deactivate_service");
-    }
-
-    /**
      * Links a service user account with a GrantedByMe account.
      *
      * @param challenge The challenge used to verify the user
@@ -184,18 +174,6 @@ public class GrantedByMe {
         params.put("challenge", challenge);
         params.put("authenticator_secret", authenticator_secret);
         return post(params, "link_account");
-    }
-
-    /**
-     * Un-links a service user account with a GrantedByMe account.
-     *
-     * @param authenticator_secret The secret used for user authentication
-     * @return JSONObject
-     */
-    public JSONObject unlinkAccount(String authenticator_secret) {
-        HashMap<String, Object> params = getParams(null, null);
-        params.put("authenticator_secret", authenticator_secret);
-        return post(params, "unlink_account");
     }
 
     /**
