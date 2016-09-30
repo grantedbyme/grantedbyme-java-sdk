@@ -42,7 +42,7 @@ import java.security.PublicKey;
 import java.util.HashMap;
 
 /**
- * GrantedByMe API class v1.0.27-master
+ * GrantedByMe API class v1.0.28-master
  *
  * @author GrantedByMe <info@grantedby.me>
  */
